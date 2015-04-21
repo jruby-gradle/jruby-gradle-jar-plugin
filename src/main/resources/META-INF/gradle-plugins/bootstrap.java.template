@@ -14,13 +14,13 @@ class JarMain {
 //        List<String> loadPaths = new ArrayList();
 //        loadPaths.add(jrubyhome);
 
-        // TODO: Allow compatinility version to be set
+        // TODO: Allow compatibility version to be set
 //          CompatVersion cv = CompatVersion.getVersionFromString("%%RUBY_COMPAT_VERSION%%");
 //          if(cv != null) {
 //              container.setCompatVersion(cv);
 //          }
 
-          // TODO: Do we need to do seomthign extra for environment control?
+          // TODO: Do we need to do something extra for environment control?
 //        container.setEnvironment(Map environment)
 
     }
