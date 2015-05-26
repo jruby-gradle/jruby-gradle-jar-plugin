@@ -19,4 +19,14 @@ class JRubyJar extends Jar {
     JRubyJar() {
         appendix = 'jruby'
     }
+
+    private JRubyJarConfigurator configurator
+
+    void setConfigurator(JRubyJarConfigurator configurator) {
+        this.configurator = configurator
+    }
+
+    JRubyJarConfigurator getConfigurator() {
+        this.configurator
+    }
 }

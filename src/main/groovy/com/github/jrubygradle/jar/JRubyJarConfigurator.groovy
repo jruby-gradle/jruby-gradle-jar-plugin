@@ -185,6 +185,10 @@ class JRubyJarConfigurator {
 
     JRubyJarConfigurator(final Jar archive) {
         this.archive = archive
+        if (archive instanceof JRubyJar) {
+            archive.setConfigurator(this)
+        }
+
         File dir = archive.project.file("${archive.project.buildDir}/dirinfo/${archive.name}")
         JRubyDirInfo dirInfo = new JRubyDirInfo(dir)
 
