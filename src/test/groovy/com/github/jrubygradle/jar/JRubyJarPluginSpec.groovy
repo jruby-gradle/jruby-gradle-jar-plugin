@@ -14,6 +14,7 @@ import static org.gradle.api.logging.LogLevel.LIFECYCLE
 /**
  * @author R. Tyler Croy
  * @author Schalk W. Cronjé
+ * @author Christian Meier
  *
  */
 class JRubyJarPluginSpec extends Specification {
@@ -234,24 +235,24 @@ class JRubyJarPluginSpec extends Specification {
                 }
             }
 
-        when: "I set the default main class"
+        when: "I set the main class"
             project.configure(jrubyJar) {
                 destinationDir = expectedDir
                 jruby {
-                    defaults 'gems'
+                    defaultGems()
                     mainClass 'bogus.does.not.exist'
+                    initScript runnable()
                 }
 
             }
             project.evaluate()
 
         and: "I actually build the JAR"
-            jrubyJar.copy()
+            jrubyJar.execute()
             def builtJar = fileNames(project.zipTree(expectedJar))
 
         then: "I expect to see jruby.home unpacked "
-            //builtJar.contains("META-INF/jruby.home/lib/ruby".toString())
-            true
+            builtJar.contains("META-INF/jruby.home/lib/ruby".toString())
 
         and: "To see my fake files in the 'gems' folder"
             builtJar.contains("gems/fake.txt".toString())
@@ -259,5 +260,7 @@ class JRubyJarPluginSpec extends Specification {
         and: "I expect the new main class to be listed in the manifest"
             jrubyJar.manifest.effectiveManifest.attributes['Main-Class']?.contains('bogus.does.not.exist')
 
+        and: "To see configurator set on the JRubyJar task"
+            jrubyJar.getConfigurator() != null
     }
 }
