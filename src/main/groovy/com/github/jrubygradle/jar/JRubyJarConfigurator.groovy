@@ -159,6 +159,18 @@ class JRubyJarConfigurator {
         mainClass(EXTRACTING_MAIN_CLASS)
     }
 
+    void jrubyVersion(String version) {
+        archive.project.dependencies {
+            jrubyJar group: 'org.jruby', name: 'jruby-complete', version: version
+        }
+    }
+
+    void jrubyMainsVersion(String version) {
+        archive.project.dependencies {
+            jrubyJar group: 'de.saumya.mojo', name: 'jruby-mains', version: version
+        }
+    }
+
     void applyConfig() {
         if (scriptName == null) {
             throw new StopExecutionException('there is no initScript configured')
