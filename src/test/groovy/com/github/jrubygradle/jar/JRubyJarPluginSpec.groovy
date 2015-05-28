@@ -126,9 +126,10 @@ class JRubyJarPluginSpec extends Specification {
                     defaultMainClass()
                 }
             }
+            jarTask.applyConfig()
 
         then: "Then the attribute should be set to the default in the manifest"
-            jarTask.manifest.attributes.'Main-Class' == JRubyJarConfigurator.DEFAULT_MAIN_CLASS
+            jarTask.manifest.attributes.'Main-Class' == JRubyJar.DEFAULT_MAIN_CLASS
     }
 
     def "Adding a default extracting main class"() {
@@ -138,9 +139,10 @@ class JRubyJarPluginSpec extends Specification {
                     extractingMainClass()
                 }
             }
+            jarTask.applyConfig()
 
         then: "Then the attribute should be set to the default in the manifest"
-            jarTask.manifest.attributes.'Main-Class' == JRubyJarConfigurator.EXTRACTING_MAIN_CLASS
+            jarTask.manifest.attributes.'Main-Class' == JRubyJar.EXTRACTING_MAIN_CLASS
     }
 
     def "Adding all defaults"() {
@@ -165,26 +167,24 @@ class JRubyJarPluginSpec extends Specification {
 
         when: "Setting a default main class and default gems via the 'defaults' method"
             project.configure(jarTask) {
-                jruby {
-                    defaults 'gems','mainClass'
-                    initScript "${init.absolutePath}"
-                }
+                defaults 'gems','mainClass'
+                initScript "${init.absolutePath}"
             }
+            jarTask.applyConfig()
 
         then: "The appropriate files included"
             fileNames(jarTask.source) == (['MANIFEST.MF','gems','gems/fake.txt','data','data/data.txt', 'fake.jar', 'Jars.lock', 'init.rb'] as Set<String>)
 
         and: "Then the attribute should be set to the default in the manifest"
-            jarTask.manifest.attributes.'Main-Class' == JRubyJarConfigurator.DEFAULT_MAIN_CLASS
+            jarTask.manifest.attributes.'Main-Class' == JRubyJar.DEFAULT_MAIN_CLASS
     }
 
     def "Adding a custom main class"() {
         when: "Setting a default main class"
             project.configure(jarTask) {
-                jruby {
-                    mainClass 'org.scooby.doo.snackMain'
-                }
+                mainClass 'org.scooby.doo.snackMain'
             }
+            jarTask.applyConfig()
 
         then: "Then the attribute should be set accordingly in the manifest"
             jarTask.manifest.attributes.'Main-Class' == 'org.scooby.doo.snackMain'
@@ -194,20 +194,18 @@ class JRubyJarPluginSpec extends Specification {
         given: "All jar, java plugins have been applied"
             project = setupProject()
             project.apply plugin : 'java'
-            Task jar = project.tasks.getByName('jar')
+            Task jar = project.tasks.getByName('jrubyJar')
 
         and: "A local repository"
             File expectedDir= new File(TESTROOT,'libs/')
             expectedDir.mkdirs()
             project.configure(jar) {
                 destinationDir = expectedDir
-                jruby {
-                }
+                initScript library()
             }
             project.evaluate()
             
         expect:
-        jar.copy()
             jar.taskDependencies.getDependencies(jar).
                     contains(project.tasks.getByName('jrubyPrepare'))
     }
@@ -243,7 +241,6 @@ class JRubyJarPluginSpec extends Specification {
                     mainClass 'bogus.does.not.exist'
                     initScript runnable()
                 }
-
             }
             project.evaluate()
 
@@ -259,8 +256,51 @@ class JRubyJarPluginSpec extends Specification {
 
         and: "I expect the new main class to be listed in the manifest"
             jrubyJar.manifest.effectiveManifest.attributes['Main-Class']?.contains('bogus.does.not.exist')
+    }
+  
+    def 'Checking setting no mainClass'() {
+        when:
+            jarTask.initScript('app.rb')
+            jarTask.applyConfig()
 
-        and: "To see configurator set on the JRubyJar task"
-            jrubyJar.getConfigurator() != null
+        then:
+            jarTask.manifest.attributes['Main-Class'] == JRubyJar.DEFAULT_MAIN_CLASS
+    }
+
+    def 'Checking setting of mainClass once'() {
+        when:
+            jarTask.initScript('app.rb')
+            jarTask.mainClass('org.example.Main')
+            jarTask.applyConfig()
+
+        then:
+            jarTask.manifest.attributes['Main-Class'] == 'org.example.Main'
+    }
+
+    def 'Checking setup runnable jrubyJar task'() {
+        when:
+            jarTask.initScript(jarTask.runnable())
+            jarTask.applyConfig()
+
+        then:
+            jarTask.manifest.attributes.containsKey('Main-Class')
+    }
+
+    def 'Checking valid library config'() {
+        when:
+            jarTask.initScript(jarTask.library())
+            jarTask.applyConfig()
+        then:
+            !jarTask.manifest.attributes.containsKey('Main-Class')
+    }
+
+    def 'Checking invalid library config'() {
+        when:
+            jarTask.initScript(jarTask.library())
+            jarTask.extractingMainClass()
+            jarTask.applyConfig()
+        then:
+            Exception e = thrown()
+            e.message == 'can not have mainClass for library'
     }
 }
